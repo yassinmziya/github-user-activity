@@ -57,7 +57,15 @@ func fetchActivity(username string) {
 		log.Fatal(err)
 	}
 
+	var pushEventRepo string
+	pushEventBuffer := 0
 	for _, event := range userEvents {
+		if event.Type != "PushEvent" && pushEventRepo != "" {
+			fmt.Printf("- Pushed %d commits to %s\n", pushEventBuffer, pushEventRepo)
+			pushEventRepo = ""
+			pushEventBuffer = 0
+		}
+
 		switch event.Type {
 		case "PushEvent":
 			var pushEvent PushEvent
@@ -65,7 +73,16 @@ func fetchActivity(username string) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			fmt.Printf("- Pushed %d commits to %s\n", pushEvent.Size, event.Repo.Name)
+			if pushEventRepo == "" {
+				pushEventRepo = event.Repo.Name
+				pushEventBuffer = pushEvent.Size
+			} else if pushEventRepo == event.Repo.Name {
+				pushEventBuffer += pushEvent.Size
+			} else {
+				fmt.Printf("- Pushed %d commits to %s\n", pushEventBuffer, pushEventRepo)
+				pushEventRepo = event.Repo.Name
+				pushEventBuffer = pushEvent.Size
+			}
 
 		case "CreateEvent":
 			var createEvent CreateEvent
