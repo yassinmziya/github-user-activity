@@ -10,18 +10,22 @@ import (
 )
 
 type UserEvent struct {
-	ID      string          `json:id`
-	Type    string          `json:type`
-	Repo    Repo            `json:repo`
-	Payload json.RawMessage `json:payload`
+	ID      string          `json:"id"`
+	Type    string          `json:"type"`
+	Repo    Repo            `json:"repo"`
+	Payload json.RawMessage `json:"payload"`
 }
 
 type Repo struct {
-	Name string `json: name`
+	Name string `json:"name"`
 }
 
 type PushEvent struct {
 	Size int
+}
+
+type CreateEvent struct {
+	RefType string `json:"ref_type"`
 }
 
 func main() {
@@ -62,6 +66,19 @@ func fetchActivity(username string) {
 				log.Fatal(err)
 			}
 			fmt.Printf("- Pushed %d commits to %s\n", pushEvent.Size, event.Repo.Name)
+
+		case "CreateEvent":
+			var createEvent CreateEvent
+			err := json.Unmarshal(event.Payload, &createEvent)
+			if err != nil {
+				log.Fatal(err)
+			}
+			preposition := " "
+			if createEvent.RefType != "repository" {
+				preposition = " in repository "
+			}
+			fmt.Printf("- Created %s%s%s\n", createEvent.RefType, preposition, event.Repo.Name)
+
 		default:
 			fmt.Printf("- Missing handling for event type \"%s\"\n", event.Type)
 		}
